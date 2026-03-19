@@ -1,74 +1,32 @@
-⚔️ Dungeon Escape
+# ⚔️ Dungeon Escape
 
-A browser-based turn-based RPG dungeon game built using HTML, CSS, and JavaScript.
-Explore rooms, fight monsters, collect treasure, and survive all 5 floors to escape!
+A browser-based RPG dungeon game built with HTML, CSS, and JavaScript.
 
-🎮 Features
+## 🎮 Features
 
-🗺️ Randomly generated 5×5 dungeon map
+* Random dungeon generation (5x5 grid)
+* Turn-based combat system
+* Boss fights 🐉
+* Inventory & shop system
+* Save & Load (localStorage)
 
-⚔️ Turn-based combat system
+## 🚀 How to Run
 
-🐉 Boss battles
+1. Download or clone repo
+2. Open `index.html` in browser
 
-💰 Treasure, traps, and shops
+## 📸 Screenshots
 
-📈 Leveling system (XP, ATK, DEF, HP)
+<img width="1862" height="868" alt="Screenshot 2026-03-19 222637" src="https://github.com/user-attachments/assets/e990a468-7590-4ae5-a356-695031418f93" />
+<img width="1850" height="873" alt="Screenshot 2026-03-19 222736" src="https://github.com/user-attachments/assets/7fbeb4a6-58b6-43d0-b06e-2868b01da64f" />
+<img width="1850" height="873" alt="Screenshot 2026-03-19 222736" src="https://github.com/user-attachments/assets/59f40bc3-ebc9-4481-8b40-29584e9f19ed" />
 
-🎒 Inventory system
 
-💾 Save & Load game (localStorage)
 
-🎨 Stylish UI with animations & effects
 
-🚀 How to Play
+## 🧠 Future Improvements
 
-Open the .html file in your browser
+* Add sound effects 🎵
+* Add leaderboard 🏆
+* Multiplayer mode 🌐
 
-Click New Game
-
-Enter your hero name
-
-Use:
-
-⬆️⬇️⬅️➡️ or WASD to move
-
-⚔️ Fight enemies
-
-🧪 Use potions to heal
-
-Reach the exit on each floor
-
-Survive all 5 floors to win 🏆
-
-🧩 Game Elements
-
-⚔️ Monster → Fight for XP & gold
-
-💰 Treasure → Free gold
-
-⚠️ Trap → Damage
-
-🛒 Shop → Buy upgrades
-
-🐉 Boss → Required to progress
-
-🚪 Exit → Next floor
-
-💾 Save System
-
-Click Save to store progress
-
-Use Load Game from menu to continue
-
-🛠️ Tech Used
-
-HTML5
-
-CSS3 (animations + UI design)
-
-JavaScript (game logic)
-
-📌 Goal
-
-Survive the dungeon, defeat enemies, and escape alive.
