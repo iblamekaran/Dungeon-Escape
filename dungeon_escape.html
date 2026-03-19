@@ -1,0 +1,1697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>⚔️ Dungeon Escape</title>
+<link href="https://fonts.googleapis.com/css2?family=MedievalSharp&family=Cinzel:wght@400;600;900&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #0a0608;
+    --bg2:       #110d0f;
+    --bg3:       #1a1115;
+    --panel:     #160f13;
+    --border:    #3d2530;
+    --border2:   #5a3040;
+    --gold:      #c9943a;
+    --gold2:     #f0bc5a;
+    --red:       #c0392b;
+    --red2:      #e74c3c;
+    --green:     #27ae60;
+    --green2:    #2ecc71;
+    --blue:      #2471a3;
+    --blue2:     #3498db;
+    --purple:    #7d3c98;
+    --purple2:   #9b59b6;
+    --text:      #e8d5c0;
+    --text2:     #a08070;
+    --text3:     #6a5040;
+    --glow:      rgba(201,148,58,0.25);
+    --red-glow:  rgba(192,57,43,0.3);
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Crimson Text', Georgia, serif;
+    font-size: 17px;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── Particle background ── */
+  #particles {
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    overflow: hidden;
+  }
+  .spark {
+    position: absolute;
+    width: 2px; height: 2px;
+    background: var(--gold);
+    border-radius: 50%;
+    animation: float linear infinite;
+    opacity: 0;
+  }
+  @keyframes float {
+    0%   { transform: translateY(100vh) translateX(0); opacity: 0; }
+    10%  { opacity: 0.6; }
+    90%  { opacity: 0.3; }
+    100% { transform: translateY(-20px) translateX(var(--dx)); opacity: 0; }
+  }
+
+  /* ── Layout ── */
+  #app { position: relative; z-index: 1; min-height: 100vh; }
+
+  /* ══════════════════ SCREENS ══════════════════ */
+  .screen { display: none; }
+  .screen.active { display: flex; }
+
+  /* ── MAIN MENU ── */
+  #screen-menu {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 40px 20px;
+    text-align: center;
+  }
+
+  .menu-title {
+    font-family: 'Cinzel', serif;
+    font-size: clamp(2.4rem, 7vw, 5rem);
+    font-weight: 900;
+    color: var(--gold);
+    text-shadow: 0 0 40px var(--glow), 0 0 80px rgba(201,148,58,0.15);
+    letter-spacing: 0.12em;
+    animation: titlePulse 3s ease-in-out infinite;
+    line-height: 1.1;
+  }
+  @keyframes titlePulse {
+    0%,100% { text-shadow: 0 0 40px var(--glow), 0 0 80px rgba(201,148,58,0.15); }
+    50%     { text-shadow: 0 0 60px rgba(201,148,58,0.5), 0 0 120px rgba(201,148,58,0.25); }
+  }
+
+  .menu-subtitle {
+    font-family: 'Crimson Text', serif;
+    font-style: italic;
+    color: var(--text2);
+    font-size: 1.2rem;
+    margin: 10px 0 50px;
+    letter-spacing: 0.05em;
+  }
+
+  .menu-divider {
+    width: 300px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--border2), transparent);
+    margin: 20px auto;
+  }
+
+  .menu-btn {
+    display: block;
+    width: 280px;
+    padding: 14px 24px;
+    margin: 10px auto;
+    background: transparent;
+    border: 1px solid var(--border2);
+    color: var(--text);
+    font-family: 'Cinzel', serif;
+    font-size: 1rem;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s;
+  }
+  .menu-btn::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(135deg, transparent 30%, rgba(201,148,58,0.08));
+    opacity: 0; transition: opacity 0.3s;
+  }
+  .menu-btn:hover {
+    border-color: var(--gold);
+    color: var(--gold);
+    text-shadow: 0 0 20px var(--glow);
+    transform: translateX(4px);
+  }
+  .menu-btn:hover::before { opacity: 1; }
+
+  .menu-btn .btn-icon { margin-right: 10px; }
+
+  /* ── CHARACTER CREATION ── */
+  #screen-create {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 40px 20px;
+  }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    padding: 36px 40px;
+    max-width: 480px;
+    width: 100%;
+    position: relative;
+  }
+  .panel::before {
+    content: '';
+    position: absolute;
+    top: -1px; left: 20px; right: 20px; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  }
+
+  .panel-title {
+    font-family: 'Cinzel', serif;
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: var(--gold);
+    text-align: center;
+    margin-bottom: 28px;
+    letter-spacing: 0.1em;
+  }
+
+  label {
+    display: block;
+    color: var(--text2);
+    font-size: 0.9rem;
+    letter-spacing: 0.05em;
+    margin-bottom: 6px;
+    font-family: 'Cinzel', serif;
+  }
+
+  input[type="text"] {
+    width: 100%;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    color: var(--text);
+    font-family: 'Crimson Text', serif;
+    font-size: 1.1rem;
+    padding: 10px 14px;
+    outline: none;
+    transition: border-color 0.2s;
+    margin-bottom: 24px;
+  }
+  input[type="text"]:focus { border-color: var(--gold); }
+  input[type="text"]::placeholder { color: var(--text3); }
+
+  .btn-primary {
+    width: 100%;
+    padding: 13px;
+    background: linear-gradient(135deg, #4a1e28, #2a0f18);
+    border: 1px solid var(--gold);
+    color: var(--gold);
+    font-family: 'Cinzel', serif;
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    cursor: pointer;
+    transition: all 0.25s;
+    position: relative; overflow: hidden;
+  }
+  .btn-primary::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: rgba(201,148,58,0.1);
+    opacity: 0; transition: opacity 0.25s;
+  }
+  .btn-primary:hover { box-shadow: 0 0 30px rgba(201,148,58,0.3); }
+  .btn-primary:hover::after { opacity: 1; }
+  .btn-secondary {
+    width: 100%;
+    padding: 11px;
+    background: transparent;
+    border: 1px solid var(--border2);
+    color: var(--text2);
+    font-family: 'Cinzel', serif;
+    font-size: 0.9rem;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: all 0.2s;
+  }
+  .btn-secondary:hover { border-color: var(--text2); color: var(--text); }
+
+  /* ── GAME SCREEN ── */
+  #screen-game {
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  /* Top HUD */
+  #hud {
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 20px;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .hud-left { display: flex; flex-direction: column; gap: 4px; }
+  .hud-name {
+    font-family: 'Cinzel', serif;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--gold);
+  }
+  .hud-meta { font-size: 0.82rem; color: var(--text2); font-family: 'Cinzel', serif; }
+
+  .hud-center { text-align: center; }
+  .floor-badge {
+    font-family: 'Cinzel', serif;
+    font-size: 0.85rem;
+    color: var(--text2);
+    border: 1px solid var(--border2);
+    padding: 4px 14px;
+    letter-spacing: 0.1em;
+  }
+
+  .hud-right {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    align-items: flex-end;
+  }
+
+  .stat-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+  }
+  .stat-label { color: var(--text3); font-family: 'Cinzel', serif; font-size: 0.75rem; letter-spacing: 0.05em; }
+  .stat-val { color: var(--text); min-width: 28px; text-align: right; }
+
+  /* HP/XP bars */
+  .bar-wrap { width: 120px; height: 6px; background: var(--bg3); border-radius: 3px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 3px; transition: width 0.4s ease; }
+  .bar-hp   { background: linear-gradient(90deg, var(--red), var(--red2)); }
+  .bar-xp   { background: linear-gradient(90deg, var(--purple), var(--purple2)); }
+
+  /* Main game layout */
+  #game-body {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 260px 1fr 220px;
+    grid-template-rows: 1fr;
+    gap: 0;
+    min-height: calc(100vh - 70px);
+  }
+
+  /* Left — minimap */
+  #panel-map {
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    padding: 20px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .panel-heading {
+    font-family: 'Cinzel', serif;
+    font-size: 0.75rem;
+    letter-spacing: 0.15em;
+    color: var(--text3);
+    text-transform: uppercase;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  #minimap {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 3px;
+  }
+
+  .map-cell {
+    aspect-ratio: 1;
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    border-radius: 2px;
+    transition: all 0.3s;
+    position: relative;
+    cursor: default;
+    background: var(--bg);
+  }
+  .map-cell.fog      { background: #0c080a; border-color: #1e141a; }
+  .map-cell.visited  { background: var(--bg3); }
+  .map-cell.player   { background: #1a0a10; border-color: var(--gold); box-shadow: 0 0 8px var(--glow); }
+  .map-cell.type-monster  { color: var(--red2); }
+  .map-cell.type-treasure { color: var(--gold); }
+  .map-cell.type-trap     { color: #e67e22; }
+  .map-cell.type-shop     { color: var(--purple2); }
+  .map-cell.type-boss     { color: var(--red2); font-weight: bold; }
+  .map-cell.type-exit     { color: var(--green2); }
+  .map-cell.type-empty    { color: var(--text3); }
+
+  .map-legend {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px 10px;
+    font-size: 0.75rem;
+  }
+  .legend-item { display: flex; align-items: center; gap: 5px; color: var(--text2); }
+  .legend-dot  { width: 8px; height: 8px; border-radius: 1px; flex-shrink: 0; }
+
+  /* Inventory panel */
+  #inv-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .inv-item {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    padding: 6px 10px;
+    font-size: 0.82rem;
+    color: var(--text2);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .inv-empty { color: var(--text3); font-style: italic; font-size: 0.82rem; }
+
+  /* Center — main content */
+  #panel-main {
+    display: flex;
+    flex-direction: column;
+    background: var(--bg);
+  }
+
+  /* Room display */
+  #room-display {
+    padding: 24px 28px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .room-type-badge {
+    font-family: 'Cinzel', serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    padding: 3px 10px;
+    border: 1px solid;
+    display: inline-block;
+    margin-bottom: 12px;
+  }
+  .room-type-badge.monster  { color: var(--red2);    border-color: var(--red);    background: rgba(192,57,43,0.1);  }
+  .room-type-badge.treasure { color: var(--gold2);   border-color: var(--gold);   background: rgba(201,148,58,0.1); }
+  .room-type-badge.trap     { color: #e67e22;         border-color: #e67e22;       background: rgba(230,126,34,0.1); }
+  .room-type-badge.shop     { color: var(--purple2); border-color: var(--purple); background: rgba(125,60,152,0.1); }
+  .room-type-badge.boss     { color: var(--red2);    border-color: var(--red);    background: rgba(192,57,43,0.15); animation: bossPulse 1.5s infinite; }
+  .room-type-badge.exit     { color: var(--green2);  border-color: var(--green);  background: rgba(39,174,96,0.1);  }
+  .room-type-badge.empty    { color: var(--text3);   border-color: var(--border); }
+  @keyframes bossPulse {
+    0%,100% { box-shadow: none; }
+    50%     { box-shadow: 0 0 12px rgba(192,57,43,0.4); }
+  }
+
+  .room-pos {
+    font-family: 'Cinzel', serif;
+    font-size: 0.75rem;
+    color: var(--text3);
+    margin-bottom: 4px;
+  }
+
+  .room-desc {
+    font-size: 1.05rem;
+    font-style: italic;
+    color: var(--text);
+    line-height: 1.6;
+  }
+
+  /* Log */
+  #log {
+    flex: 1;
+    padding: 14px 28px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    max-height: 280px;
+  }
+  #log::-webkit-scrollbar { width: 4px; }
+  #log::-webkit-scrollbar-track { background: var(--bg); }
+  #log::-webkit-scrollbar-thumb { background: var(--border2); }
+
+  .log-line {
+    font-size: 0.9rem;
+    line-height: 1.5;
+    padding: 2px 0;
+    border-left: 2px solid transparent;
+    padding-left: 8px;
+    animation: logSlide 0.3s ease;
+  }
+  @keyframes logSlide {
+    from { opacity: 0; transform: translateX(-8px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+  .log-line.info    { color: var(--text2); border-color: var(--border2); }
+  .log-line.success { color: var(--green2); border-color: var(--green); }
+  .log-line.danger  { color: var(--red2);   border-color: var(--red); }
+  .log-line.gold    { color: var(--gold2);  border-color: var(--gold); }
+  .log-line.system  { color: var(--purple2); border-color: var(--purple); }
+  .log-line.warn    { color: #e67e22; border-color: #c0632a; }
+
+  /* Direction controls */
+  #controls {
+    padding: 16px 28px;
+    border-top: 1px solid var(--border);
+  }
+
+  #dir-pad {
+    display: grid;
+    grid-template-areas:
+      ". n ."
+      "w . e"
+      ". s .";
+    grid-template-columns: repeat(3, 44px);
+    gap: 4px;
+    margin-bottom: 12px;
+  }
+
+  .dir-btn {
+    width: 44px; height: 44px;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    color: var(--text2);
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Crimson Text', serif;
+  }
+  .dir-btn:hover { background: var(--bg2); border-color: var(--gold); color: var(--gold); }
+  .dir-btn:active { transform: scale(0.92); }
+  .dir-btn[data-dir="north"] { grid-area: n; }
+  .dir-btn[data-dir="south"] { grid-area: s; }
+  .dir-btn[data-dir="west"]  { grid-area: w; }
+  .dir-btn[data-dir="east"]  { grid-area: e; }
+
+  #action-btns {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .action-btn {
+    padding: 7px 14px;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    color: var(--text2);
+    font-family: 'Cinzel', serif;
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .action-btn:hover { border-color: var(--text2); color: var(--text); }
+  .action-btn.danger:hover { border-color: var(--red2); color: var(--red2); }
+
+  /* Right — stats */
+  #panel-stats {
+    background: var(--bg2);
+    border-left: 1px solid var(--border);
+    padding: 20px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow-y: auto;
+  }
+
+  .stat-block {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .stat-entry {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 10px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    font-size: 0.85rem;
+  }
+  .stat-entry .s-label { color: var(--text2); font-family: 'Cinzel', serif; font-size: 0.75rem; letter-spacing: 0.05em; }
+  .stat-entry .s-val   { color: var(--gold); font-weight: 600; }
+  .stat-entry .s-val.red   { color: var(--red2); }
+  .stat-entry .s-val.green { color: var(--green2); }
+  .stat-entry .s-val.blue  { color: var(--blue2); }
+
+  /* ── MODAL (combat / shop / etc.) ── */
+  #modal-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.85);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  #modal-overlay.open { display: flex; }
+
+  #modal-box {
+    background: var(--panel);
+    border: 1px solid var(--border2);
+    max-width: 520px;
+    width: 100%;
+    position: relative;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  #modal-box::before {
+    content: '';
+    position: absolute;
+    top: -1px; left: 10%; right: 10%; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  }
+
+  #modal-header {
+    padding: 20px 24px 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  #modal-icon { font-size: 1.8rem; }
+  #modal-title {
+    font-family: 'Cinzel', serif;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--gold);
+    letter-spacing: 0.08em;
+  }
+
+  #modal-body { padding: 20px 24px; }
+  #modal-footer { padding: 14px 24px; border-top: 1px solid var(--border); display: flex; gap: 10px; flex-wrap: wrap; }
+
+  .modal-btn {
+    flex: 1;
+    min-width: 100px;
+    padding: 10px 16px;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    color: var(--text);
+    font-family: 'Cinzel', serif;
+    font-size: 0.85rem;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+  .modal-btn:hover             { border-color: var(--text2); color: var(--text); }
+  .modal-btn.primary           { border-color: var(--gold);  color: var(--gold); background: rgba(201,148,58,0.05); }
+  .modal-btn.primary:hover     { background: rgba(201,148,58,0.12); }
+  .modal-btn.danger            { border-color: var(--red);   color: var(--red2); background: rgba(192,57,43,0.05); }
+  .modal-btn.danger:hover      { background: rgba(192,57,43,0.12); }
+  .modal-btn.success           { border-color: var(--green); color: var(--green2); background: rgba(39,174,96,0.05); }
+  .modal-btn.success:hover     { background: rgba(39,174,96,0.12); }
+
+  /* Combat specific */
+  .combatant-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+  .combatant {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    padding: 12px 14px;
+  }
+  .combatant-name {
+    font-family: 'Cinzel', serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .combatant-name.player-name { color: var(--blue2); }
+  .combatant-name.enemy-name  { color: var(--red2);  }
+  .combatant-hp-bar { width: 100%; height: 8px; background: var(--bg); border-radius: 4px; overflow: hidden; margin-bottom: 4px; }
+  .combatant-hp-fill { height: 100%; background: linear-gradient(90deg, var(--red), var(--red2)); border-radius: 4px; transition: width 0.5s ease; }
+  .combatant-hp-fill.player { background: linear-gradient(90deg, var(--blue), var(--blue2)); }
+  .combatant-hp-text { font-size: 0.75rem; color: var(--text2); }
+
+  #combat-log {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    padding: 10px 14px;
+    height: 100px;
+    overflow-y: auto;
+    margin-bottom: 6px;
+    font-size: 0.88rem;
+    line-height: 1.6;
+  }
+  #combat-log::-webkit-scrollbar { width: 3px; }
+  #combat-log::-webkit-scrollbar-thumb { background: var(--border2); }
+
+  /* Shop */
+  .shop-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .shop-item:hover { border-color: var(--gold); }
+  .shop-item-name { font-family: 'Cinzel', serif; font-size: 0.85rem; color: var(--text); }
+  .shop-item-info { font-size: 0.78rem; color: var(--text2); margin-top: 2px; }
+  .shop-item-price {
+    font-family: 'Cinzel', serif;
+    font-size: 0.9rem;
+    color: var(--gold);
+    white-space: nowrap;
+    margin-left: 12px;
+  }
+  .shop-item.cant-afford { opacity: 0.45; cursor: not-allowed; }
+  .shop-gold { text-align: right; font-family: 'Cinzel', serif; font-size: 0.9rem; color: var(--gold2); margin-bottom: 14px; }
+
+  /* ── GAME OVER / WIN screens ── */
+  #screen-gameover, #screen-win {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    text-align: center;
+    padding: 40px 20px;
+  }
+
+  .end-icon { font-size: 5rem; margin-bottom: 20px; animation: endBounce 0.6s ease; }
+  @keyframes endBounce {
+    0%   { transform: scale(0.5); opacity: 0; }
+    70%  { transform: scale(1.15); }
+    100% { transform: scale(1);   opacity: 1; }
+  }
+
+  .end-title {
+    font-family: 'Cinzel', serif;
+    font-size: clamp(1.8rem, 5vw, 3rem);
+    font-weight: 900;
+    margin-bottom: 10px;
+  }
+  .end-title.dead { color: var(--red2); text-shadow: 0 0 30px var(--red-glow); }
+  .end-title.win  { color: var(--gold); text-shadow: 0 0 40px var(--glow); }
+
+  .end-sub {
+    font-style: italic;
+    color: var(--text2);
+    font-size: 1.1rem;
+    margin-bottom: 30px;
+  }
+
+  .end-stats {
+    background: var(--panel);
+    border: 1px solid var(--border2);
+    padding: 24px 36px;
+    margin-bottom: 30px;
+    min-width: 280px;
+    text-align: left;
+  }
+  .end-stat-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.95rem;
+  }
+  .end-stat-row:last-child { border-bottom: none; }
+  .end-stat-row .esk { color: var(--text2); font-family: 'Cinzel', serif; font-size: 0.82rem; }
+  .end-stat-row .esv { color: var(--gold); font-weight: 600; }
+
+  /* How to play */
+  #screen-howto {
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 50px 20px;
+    min-height: 100vh;
+  }
+  .howto-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    max-width: 800px;
+    width: 100%;
+    margin-top: 30px;
+  }
+  .howto-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    padding: 20px;
+  }
+  .howto-card h3 {
+    font-family: 'Cinzel', serif;
+    font-size: 0.85rem;
+    color: var(--gold);
+    letter-spacing: 0.1em;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .howto-card p, .howto-card li {
+    font-size: 0.88rem;
+    color: var(--text2);
+    line-height: 1.6;
+    list-style: none;
+    margin-bottom: 4px;
+  }
+  .howto-card li span { color: var(--text); }
+
+  /* Lore screen */
+  #screen-lore {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 40px 20px;
+  }
+  .lore-text {
+    max-width: 600px;
+    font-style: italic;
+    font-size: 1.1rem;
+    line-height: 1.9;
+    color: var(--text2);
+    text-align: center;
+    margin: 24px 0;
+    border-left: 2px solid var(--border2);
+    padding-left: 20px;
+    text-align: left;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    #game-body { grid-template-columns: 1fr; grid-template-rows: auto 1fr auto; }
+    #panel-map { border-right: none; border-bottom: 1px solid var(--border); flex-direction: row; flex-wrap: wrap; }
+    #panel-stats { border-left: none; border-top: 1px solid var(--border); flex-direction: row; flex-wrap: wrap; }
+    #hud { grid-template-columns: 1fr 1fr; }
+    .hud-center { display: none; }
+    .bar-wrap { width: 80px; }
+  }
+
+  /* Transitions */
+  .screen { animation: fadeIn 0.35s ease; }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Damage flash */
+  @keyframes damageFlash {
+    0%,100% { background: transparent; }
+    50%     { background: rgba(192,57,43,0.15); }
+  }
+  .damage-flash { animation: damageFlash 0.4s ease; }
+
+  /* Scrollbar global */
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- Particles -->
+<div id="particles"></div>
+
+<div id="app">
+
+  <!-- ══════════ MAIN MENU ══════════ -->
+  <div id="screen-menu" class="screen active">
+    <div class="menu-title">⚔ DUNGEON ESCAPE ⚔</div>
+    <div class="menu-subtitle">Navigate the depths. Fight. Survive. Escape.</div>
+    <div class="menu-divider"></div>
+    <button class="menu-btn" onclick="showScreen('screen-create')"><span class="btn-icon">🗡️</span> New Game</button>
+    <button class="menu-btn" onclick="loadGame()"><span class="btn-icon">📂</span> Load Game</button>
+    <button class="menu-btn" onclick="showScreen('screen-lore')"><span class="btn-icon">📜</span> Read Lore</button>
+    <button class="menu-btn" onclick="showScreen('screen-howto')"><span class="btn-icon">📖</span> How to Play</button>
+    <div class="menu-divider"></div>
+    <div style="color:var(--text3);font-size:0.8rem;font-family:'Cinzel',serif;letter-spacing:0.1em;">FLOORS: 5 &nbsp;·&nbsp; GRID: 5×5 &nbsp;·&nbsp; TURN-BASED RPG</div>
+  </div>
+
+  <!-- ══════════ CHARACTER CREATE ══════════ -->
+  <div id="screen-create" class="screen">
+    <div class="panel">
+      <div class="panel-title">⚔️ &nbsp; CREATE YOUR HERO</div>
+      <label>HERO NAME</label>
+      <input type="text" id="input-name" placeholder="Enter your name..." maxlength="20" />
+      <button class="btn-primary" onclick="startGame()">ENTER THE DUNGEON</button>
+      <button class="btn-secondary" onclick="showScreen('screen-menu')">← Back to Menu</button>
+    </div>
+  </div>
+
+  <!-- ══════════ GAME SCREEN ══════════ -->
+  <div id="screen-game" class="screen">
+
+    <!-- HUD -->
+    <div id="hud">
+      <div class="hud-left">
+        <div class="hud-name" id="hud-name">Hero</div>
+        <div class="hud-meta" id="hud-meta">Level 1</div>
+      </div>
+      <div class="hud-center">
+        <div class="floor-badge" id="hud-floor">FLOOR 1 / 5</div>
+      </div>
+      <div class="hud-right">
+        <div class="stat-row">
+          <span class="stat-label">HP</span>
+          <div class="bar-wrap"><div class="bar-fill bar-hp" id="bar-hp" style="width:100%"></div></div>
+          <span class="stat-val" id="hud-hp">100/100</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">XP</span>
+          <div class="bar-wrap"><div class="bar-fill bar-xp" id="bar-xp" style="width:0%"></div></div>
+          <span class="stat-val" id="hud-xp">0/30</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Body -->
+    <div id="game-body">
+
+      <!-- LEFT: Minimap -->
+      <div id="panel-map">
+        <div class="panel-heading">🗺 Dungeon Map</div>
+        <div id="minimap"></div>
+        <div class="panel-heading">Legend</div>
+        <div class="map-legend">
+          <div class="legend-item"><div class="legend-dot" style="background:#c0392b"></div>Monster</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#c9943a"></div>Treasure</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#e67e22"></div>Trap</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#7d3c98"></div>Shop</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#27ae60"></div>Exit</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#c9943a;border-radius:50%"></div>Boss</div>
+        </div>
+        <div class="panel-heading">🎒 Inventory</div>
+        <div id="inv-list"></div>
+      </div>
+
+      <!-- CENTER: Room + Log + Controls -->
+      <div id="panel-main">
+        <div id="room-display">
+          <div id="room-badge" class="room-type-badge empty">Empty</div>
+          <div class="room-pos" id="room-pos">Room (0,0)</div>
+          <div class="room-desc" id="room-desc">The dungeon awaits...</div>
+        </div>
+
+        <div id="log"></div>
+
+        <div id="controls">
+          <div style="display:flex;align-items:flex-start;gap:24px;flex-wrap:wrap;">
+            <div id="dir-pad">
+              <button class="dir-btn" data-dir="north" onclick="move('north')">↑</button>
+              <button class="dir-btn" data-dir="west"  onclick="move('west')">←</button>
+              <button class="dir-btn" data-dir="east"  onclick="move('east')">→</button>
+              <button class="dir-btn" data-dir="south" onclick="move('south')">↓</button>
+            </div>
+            <div id="action-btns">
+              <button class="action-btn" onclick="usePotion()">🧪 Use Potion</button>
+              <button class="action-btn" onclick="saveGame()">💾 Save</button>
+              <button class="action-btn danger" onclick="quitGame()">🚪 Quit</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: Stats -->
+      <div id="panel-stats">
+        <div class="panel-heading">⚔️ Character</div>
+        <div class="stat-block">
+          <div class="stat-entry"><span class="s-label">ATK</span><span class="s-val" id="stat-atk">8</span></div>
+          <div class="stat-entry"><span class="s-label">DEF</span><span class="s-val blue" id="stat-def">2</span></div>
+          <div class="stat-entry"><span class="s-label">GOLD</span><span class="s-val" id="stat-gold">15</span></div>
+          <div class="stat-entry"><span class="s-label">LEVEL</span><span class="s-val green" id="stat-level">1</span></div>
+          <div class="stat-entry"><span class="s-label">FLOOR</span><span class="s-val" id="stat-floor">1</span></div>
+          <div class="stat-entry"><span class="s-label">ROOMS</span><span class="s-val" id="stat-rooms">1</span></div>
+        </div>
+        <div class="panel-heading">📊 Session</div>
+        <div class="stat-block">
+          <div class="stat-entry"><span class="s-label">KILLS</span><span class="s-val red" id="stat-kills">0</span></div>
+          <div class="stat-entry"><span class="s-label">GOLD FOUND</span><span class="s-val" id="stat-gold-found">0</span></div>
+          <div class="stat-entry"><span class="s-label">TRAPS HIT</span><span class="s-val red" id="stat-traps">0</span></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══════════ GAME OVER ══════════ -->
+  <div id="screen-gameover" class="screen">
+    <div class="end-icon">💀</div>
+    <div class="end-title dead">YOU HAVE FALLEN...</div>
+    <div class="end-sub">The dungeon claims another soul.</div>
+    <div class="end-stats" id="gameover-stats"></div>
+    <button class="btn-primary" style="max-width:260px" onclick="showScreen('screen-create')">Try Again</button>
+    <button class="btn-secondary" style="max-width:260px;margin-top:10px" onclick="showScreen('screen-menu')">Main Menu</button>
+  </div>
+
+  <!-- ══════════ WIN SCREEN ══════════ -->
+  <div id="screen-win" class="screen">
+    <div class="end-icon">🏆</div>
+    <div class="end-title win">YOU ESCAPED!</div>
+    <div class="end-sub">Sunlight. Fresh air. You made it out alive.</div>
+    <div class="end-stats" id="win-stats"></div>
+    <button class="btn-primary" style="max-width:260px" onclick="showScreen('screen-create')">Play Again</button>
+    <button class="btn-secondary" style="max-width:260px;margin-top:10px" onclick="showScreen('screen-menu')">Main Menu</button>
+  </div>
+
+  <!-- ══════════ HOW TO PLAY ══════════ -->
+  <div id="screen-howto" class="screen">
+    <div class="panel-title" style="font-family:'Cinzel',serif;color:var(--gold);font-size:1.5rem;letter-spacing:0.1em;">📖 &nbsp; HOW TO PLAY</div>
+    <div class="howto-grid">
+      <div class="howto-card">
+        <h3>🎯 GOAL</h3>
+        <p>Survive 5 floors of the dungeon and reach the exit to escape alive. Each floor is a randomly generated 5×5 grid.</p>
+      </div>
+      <div class="howto-card">
+        <h3>🧭 MOVEMENT</h3>
+        <p>Use the direction pad (↑↓←→) to move between rooms. Unknown rooms appear as <strong style="color:var(--text3)">?</strong> on the map until visited.</p>
+      </div>
+      <div class="howto-card">
+        <h3>🚪 ROOM TYPES</h3>
+        <ul>
+          <li>· <span>Empty</span> — Safe passage</li>
+          <li>⚔ <span>Monster</span> — Turn-based fight</li>
+          <li>💰 <span>Treasure</span> — Free gold!</li>
+          <li>⚠ <span>Trap</span> — Takes HP damage</li>
+          <li>🛒 <span>Shop</span> — Buy upgrades</li>
+          <li>🐉 <span>Boss</span> — Defeat to advance</li>
+          <li>🚪 <span>Exit</span> — Next floor</li>
+        </ul>
+      </div>
+      <div class="howto-card">
+        <h3>⚔️ COMBAT</h3>
+        <p>Choose to Attack, Use Potion, or Flee. Each victory grants XP and Gold. Enough XP triggers a Level Up — fully restoring HP!</p>
+      </div>
+      <div class="howto-card">
+        <h3>💾 SAVE & LOAD</h3>
+        <p>Click Save at any time to store progress in your browser. Load Game from the main menu to continue your run.</p>
+      </div>
+      <div class="howto-card">
+        <h3>📈 LEVELLING</h3>
+        <p>Defeat monsters to gain XP. Each level increases ATK, DEF, and Max HP — and fully restores your health.</p>
+      </div>
+    </div>
+    <button class="btn-secondary" style="max-width:260px;margin-top:30px" onclick="showScreen('screen-menu')">← Back</button>
+  </div>
+
+  <!-- ══════════ LORE ══════════ -->
+  <div id="screen-lore" class="screen">
+    <div class="panel-title" style="font-family:'Cinzel',serif;color:var(--gold);font-size:1.5rem;letter-spacing:0.1em;">📜 &nbsp; DUNGEON LORE</div>
+    <div class="lore-text" id="lore-text"></div>
+    <button class="menu-btn" onclick="generateLore()" style="margin-bottom:12px">🎲 Generate New Lore</button>
+    <button class="btn-secondary" style="max-width:260px" onclick="showScreen('screen-menu')">← Back</button>
+  </div>
+
+</div>
+
+<!-- ══════════ MODAL ══════════ -->
+<div id="modal-overlay">
+  <div id="modal-box">
+    <div id="modal-header">
+      <div id="modal-icon">⚔️</div>
+      <div id="modal-title">Combat</div>
+    </div>
+    <div id="modal-body"></div>
+    <div id="modal-footer"></div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+//  PARTICLES
+// ═══════════════════════════════════════════════
+(function() {
+  const container = document.getElementById('particles');
+  for (let i = 0; i < 30; i++) {
+    const s = document.createElement('div');
+    s.className = 'spark';
+    s.style.left = Math.random() * 100 + 'vw';
+    s.style.setProperty('--dx', (Math.random() - 0.5) * 200 + 'px');
+    s.style.animationDuration = (6 + Math.random() * 12) + 's';
+    s.style.animationDelay    = (Math.random() * 10) + 's';
+    container.appendChild(s);
+  }
+})();
+
+// ═══════════════════════════════════════════════
+//  GAME DATA
+// ═══════════════════════════════════════════════
+const MONSTERS = [
+  {name:"Goblin",   hp:15, atk:4,  xp:10, gold:5 , icon:"👺"},
+  {name:"Skeleton", hp:20, atk:6,  xp:15, gold:8 , icon:"💀"},
+  {name:"Troll",    hp:35, atk:9,  xp:25, gold:15, icon:"👹"},
+  {name:"Vampire",  hp:28, atk:11, xp:30, gold:20, icon:"🧛"},
+];
+const BOSS = {name:"Dragon", hp:60, atk:18, xp:80, gold:50, icon:"🐉"};
+
+const ITEMS = {
+  "Health Potion": {type:"heal",   value:25, price:10, icon:"🧪"},
+  "Iron Sword":    {type:"weapon", value:5,  price:15, icon:"🗡️"},
+  "Steel Sword":   {type:"weapon", value:10, price:30, icon:"⚔️"},
+  "Fire Staff":    {type:"weapon", value:15, price:50, icon:"🔥"},
+  "Shield":        {type:"armor",  value:4,  price:20, icon:"🛡️"},
+  "Magic Amulet":  {type:"armor",  value:7,  price:40, icon:"🔮"},
+};
+
+const TRAPS = [
+  {name:"Spike Pit",   dmg:10, msg:"You tumble into a spike pit!"},
+  {name:"Poison Dart", dmg:8,  msg:"A dart shoots from the wall — poison!"},
+  {name:"Fire Glyph",  dmg:15, msg:"A fire glyph explodes beneath your feet!"},
+];
+
+const TREASURES = [
+  {gold:20, msg:"💰 A small wooden chest — filled with coins!"},
+  {gold:40, msg:"💎 A sparkling gem worth 40 gold!"},
+  {gold:10, msg:"🪙 A few loose coins scattered on the floor."},
+];
+
+const ROOM_DESCS = {
+  empty:    ["A dusty corridor. Nothing stirs.","Cobwebs hang from the ceiling.","The torches flicker. All is quiet."],
+  monster:  ["You hear a growl ahead...","Eyes glint in the darkness.","The stench of a beast fills the air."],
+  treasure: ["A glimmer catches your eye.","Something shiny lies in the corner.","The smell of old coins fills the room."],
+  trap:     ["The floor looks unstable...","Strange markings cover the walls.","A faint hissing sound..."],
+  shop:     ["A cloaked merchant waves at you. 'Fine wares, traveller!'"],
+  boss:     ["An ominous silence — something enormous lurks here."],
+  exit:     ["A glowing staircase spirals upward into the unknown."],
+};
+
+// ═══════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════
+let player = null;
+let dungeon = {};
+let dungeonSize = 5;
+let exitPos = [4,4];
+let session = {kills:0, goldFound:0, traps:0};
+
+// ═══════════════════════════════════════════════
+//  UTILITIES
+// ═══════════════════════════════════════════════
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+const rand = (a,b) => Math.floor(Math.random() * (b - a + 1)) + a;
+const clamp = (v,lo,hi) => Math.min(Math.max(v, lo), hi);
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if (id === 'screen-lore') generateLore();
+}
+
+function log(msg, type='info') {
+  const el = document.getElementById('log');
+  const line = document.createElement('div');
+  line.className = `log-line ${type}`;
+  line.textContent = msg;
+  el.appendChild(line);
+  el.scrollTop = el.scrollHeight;
+  // Keep log from growing unbounded
+  while (el.children.length > 80) el.removeChild(el.firstChild);
+}
+
+function flashBody() {
+  document.getElementById('panel-main').classList.remove('damage-flash');
+  void document.getElementById('panel-main').offsetWidth;
+  document.getElementById('panel-main').classList.add('damage-flash');
+}
+
+// ═══════════════════════════════════════════════
+//  PLAYER
+// ═══════════════════════════════════════════════
+function createPlayer(name) {
+  return {
+    name, hp:100, maxHp:100, atk:8, defense:2,
+    gold:15, xp:0, level:1, xpNeeded:30,
+    inventory:[], visitedSet:new Set(), floor:1,
+    pos:[0,0], escaped:false,
+  };
+}
+
+function updateHUD() {
+  const p = player;
+  document.getElementById('hud-name').textContent = p.name;
+  document.getElementById('hud-meta').textContent = `Level ${p.level}`;
+  document.getElementById('hud-floor').textContent = `FLOOR ${p.floor} / 5`;
+  document.getElementById('hud-hp').textContent = `${p.hp}/${p.maxHp}`;
+  document.getElementById('hud-xp').textContent = `${p.xp}/${p.xpNeeded}`;
+  document.getElementById('bar-hp').style.width = clamp(p.hp/p.maxHp*100,0,100)+'%';
+  document.getElementById('bar-xp').style.width = clamp(p.xp/p.xpNeeded*100,0,100)+'%';
+  // Stats panel
+  document.getElementById('stat-atk').textContent   = p.atk;
+  document.getElementById('stat-def').textContent   = p.defense;
+  document.getElementById('stat-gold').textContent  = p.gold;
+  document.getElementById('stat-level').textContent = p.level;
+  document.getElementById('stat-floor').textContent = p.floor;
+  document.getElementById('stat-rooms').textContent = p.visitedSet.size;
+  document.getElementById('stat-kills').textContent      = session.kills;
+  document.getElementById('stat-gold-found').textContent = session.goldFound;
+  document.getElementById('stat-traps').textContent      = session.traps;
+  // Inventory
+  const inv = document.getElementById('inv-list');
+  inv.innerHTML = '';
+  if (p.inventory.length === 0) {
+    inv.innerHTML = '<div class="inv-empty">Empty</div>';
+  } else {
+    const counts = {};
+    p.inventory.forEach(i => counts[i] = (counts[i]||0)+1);
+    Object.entries(counts).forEach(([name, cnt]) => {
+      const item = ITEMS[name];
+      const d = document.createElement('div');
+      d.className = 'inv-item';
+      d.textContent = `${item?.icon||'•'} ${name}${cnt>1?' ×'+cnt:''}`;
+      inv.appendChild(d);
+    });
+  }
+}
+
+function checkLevelUp() {
+  while (player.xp >= player.xpNeeded) {
+    player.xp -= player.xpNeeded;
+    player.level++;
+    player.xpNeeded = Math.floor(player.xpNeeded * 1.6);
+    player.maxHp += 15;
+    player.hp     = player.maxHp;
+    player.atk   += 3;
+    player.defense += 1;
+    log(`✨ LEVEL UP! Now Level ${player.level} — HP fully restored!`, 'system');
+    log(`   Max HP +15 | ATK +3 | DEF +1`, 'system');
+  }
+}
+
+// ═══════════════════════════════════════════════
+//  DUNGEON GENERATION
+// ═══════════════════════════════════════════════
+function generateFloor(floorNum) {
+  dungeon = {};
+  dungeonSize = 5;
+  exitPos = [rand(2,4), rand(2,4)];
+
+  for (let r = 0; r < dungeonSize; r++) {
+    for (let c = 0; c < dungeonSize; c++) {
+      const key = `${r},${c}`;
+      let type;
+      if (r === 0 && c === 0) {
+        type = 'empty';
+      } else if (r === exitPos[0] && c === exitPos[1]) {
+        type = (floorNum % 3 === 0) ? 'boss' : 'exit';
+      } else {
+        const roll = Math.random();
+        if      (roll < 0.30) type = 'monster';
+        else if (roll < 0.50) type = 'empty';
+        else if (roll < 0.65) type = 'treasure';
+        else if (roll < 0.80) type = 'trap';
+        else if (roll < 0.90) type = 'shop';
+        else                  type = 'monster';
+      }
+      dungeon[key] = {
+        type,
+        visited: false,
+        desc: pick(ROOM_DESCS[type] || ['An ordinary room.']),
+      };
+    }
+  }
+}
+
+function renderMinimap() {
+  const map = document.getElementById('minimap');
+  map.innerHTML = '';
+  const icons = {empty:'·', monster:'⚔', treasure:'T', trap:'!', shop:'S', boss:'B', exit:'E'};
+  const [pr, pc] = player.pos;
+
+  for (let r = 0; r < dungeonSize; r++) {
+    for (let c = 0; c < dungeonSize; c++) {
+      const cell = document.createElement('div');
+      cell.className = 'map-cell';
+      const key = `${r},${c}`;
+      const room = dungeon[key];
+      const isPlayer = r === pr && c === pc;
+
+      if (isPlayer) {
+        cell.classList.add('player');
+        cell.textContent = '@';
+      } else if (room && room.visited) {
+        cell.classList.add('visited', `type-${room.type}`);
+        cell.textContent = icons[room.type] || '·';
+        cell.title = room.type;
+      } else {
+        cell.classList.add('fog');
+        cell.textContent = '?';
+      }
+      map.appendChild(cell);
+    }
+  }
+}
+
+function updateRoomDisplay() {
+  const [r,c] = player.pos;
+  const room = dungeon[`${r},${c}`];
+  const badge = document.getElementById('room-badge');
+  badge.textContent = (room.type.charAt(0).toUpperCase() + room.type.slice(1));
+  badge.className = `room-type-badge ${room.type}`;
+  document.getElementById('room-pos').textContent = `Room (${r}, ${c})`;
+  document.getElementById('room-desc').textContent = room.desc;
+}
+
+// ═══════════════════════════════════════════════
+//  MOVEMENT
+// ═══════════════════════════════════════════════
+const DELTAS = {north:[-1,0], south:[1,0], west:[0,-1], east:[0,1]};
+
+function move(dir) {
+  const [dr, dc] = DELTAS[dir];
+  const [r, c] = player.pos;
+  const nr = r + dr, nc = c + dc;
+
+  if (nr < 0 || nr >= dungeonSize || nc < 0 || nc >= dungeonSize) {
+    log(`🧱 A wall blocks your path to the ${dir}.`, 'warn');
+    return;
+  }
+
+  player.pos = [nr, nc];
+  player.visitedSet.add(`${nr},${nc}`);
+  const room = dungeon[`${nr},${nc}`];
+  log(`You move ${dir} → Room (${nr}, ${nc})`, 'info');
+
+  updateRoomDisplay();
+  renderMinimap();
+  updateHUD();
+
+  if (!room.visited) {
+    room.visited = true;
+    triggerRoomEvent(room, nr, nc);
+  }
+}
+
+// ═══════════════════════════════════════════════
+//  ROOM EVENTS
+// ═══════════════════════════════════════════════
+function triggerRoomEvent(room, r, c) {
+  switch (room.type) {
+    case 'monster':  openCombatModal(pick(MONSTERS)); break;
+    case 'boss':     openCombatModal(BOSS, true); break;
+    case 'treasure': eventTreasure(); break;
+    case 'trap':     eventTrap(); break;
+    case 'shop':     openShopModal(); break;
+    case 'exit':     eventExit(); break;
+  }
+}
+
+function eventTreasure() {
+  const t = pick(TREASURES);
+  player.gold += t.gold;
+  session.goldFound += t.gold;
+  log(t.msg, 'gold');
+  log(`+${t.gold} gold  (Total: ${player.gold})`, 'gold');
+  updateHUD();
+}
+
+function eventTrap() {
+  const trap = pick(TRAPS);
+  player.hp = Math.max(0, player.hp - trap.dmg);
+  session.traps++;
+  flashBody();
+  log(`⚠️ TRAP — ${trap.msg}`, 'danger');
+  log(`You take ${trap.dmg} damage!  HP: ${player.hp}/${player.maxHp}`, 'danger');
+  updateHUD();
+  if (player.hp <= 0) triggerDeath();
+}
+
+function eventExit() {
+  if (player.floor >= 5) {
+    // WIN!
+    player.escaped = true;
+    triggerWin();
+  } else {
+    player.floor++;
+    player.pos = [0,0];
+    player.visitedSet = new Set(['0,0']);
+    log(`🚪 You descend to Floor ${player.floor}!`, 'system');
+    generateFloor(player.floor);
+    dungeon['0,0'].visited = true;
+    updateRoomDisplay();
+    renderMinimap();
+    updateHUD();
+  }
+}
+
+// ═══════════════════════════════════════════════
+//  COMBAT MODAL
+// ═══════════════════════════════════════════════
+let combatState = null;
+
+function openCombatModal(monster, isBoss=false) {
+  combatState = {
+    enemy: {...monster},
+    enemyMaxHp: monster.hp,
+    isBoss,
+    round: 1,
+  };
+  renderCombatModal();
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function renderCombatModal() {
+  const {enemy, enemyMaxHp, isBoss, round} = combatState;
+  const p = player;
+
+  document.getElementById('modal-icon').textContent  = isBoss ? '🐉' : '⚔️';
+  document.getElementById('modal-title').textContent = isBoss ? `BOSS — ${enemy.name}` : `Combat — ${enemy.name}`;
+
+  document.getElementById('modal-body').innerHTML = `
+    <div class="combatant-row">
+      <div class="combatant">
+        <div class="combatant-name player-name">⚔️ ${p.name}</div>
+        <div class="combatant-hp-bar"><div class="combatant-hp-fill player" id="c-player-bar" style="width:${clamp(p.hp/p.maxHp*100,0,100)}%"></div></div>
+        <div class="combatant-hp-text" id="c-player-hp">${p.hp} / ${p.maxHp} HP</div>
+      </div>
+      <div class="combatant">
+        <div class="combatant-name enemy-name">${enemy.icon||'👾'} ${enemy.name}</div>
+        <div class="combatant-hp-bar"><div class="combatant-hp-fill" id="c-enemy-bar" style="width:${clamp(enemy.hp/enemyMaxHp*100,0,100)}%"></div></div>
+        <div class="combatant-hp-text" id="c-enemy-hp">${enemy.hp} / ${enemyMaxHp} HP</div>
+      </div>
+    </div>
+    <div id="combat-log">Round ${round} — Choose your action...</div>
+  `;
+
+  const hasPotions = p.inventory.includes('Health Potion');
+  document.getElementById('modal-footer').innerHTML = `
+    <button class="modal-btn primary" onclick="combatAction('attack')">⚔️ Attack</button>
+    <button class="modal-btn ${hasPotions?'success':''}""
+      onclick="combatAction('potion')" ${hasPotions?'':'disabled style="opacity:0.4;cursor:not-allowed"'}>
+      🧪 Potion
+    </button>
+    <button class="modal-btn" onclick="combatAction('flee')">🏃 Flee</button>
+  `;
+}
+
+function combatAction(action) {
+  const {enemy} = combatState;
+  const clog = document.getElementById('combat-log');
+
+  const addLine = (txt, color='') => {
+    clog.innerHTML += `<div style="color:${color||'var(--text2)'}">${txt}</div>`;
+    clog.scrollTop = clog.scrollHeight;
+  };
+
+  combatState.round++;
+
+  if (action === 'attack') {
+    const dmg = Math.max(1, player.atk - rand(0,2) + rand(0,3));
+    enemy.hp -= dmg;
+    addLine(`You deal ${dmg} damage to ${enemy.name}!`, 'var(--blue2)');
+  } else if (action === 'potion') {
+    const idx = player.inventory.indexOf('Health Potion');
+    if (idx !== -1) {
+      player.inventory.splice(idx, 1);
+      const heal = ITEMS['Health Potion'].value;
+      player.hp = Math.min(player.maxHp, player.hp + heal);
+      addLine(`🧪 You drink a Health Potion and restore ${heal} HP!`, 'var(--green2)');
+    }
+  } else if (action === 'flee') {
+    if (Math.random() < 0.4) {
+      addLine('🏃 You flee successfully!', 'var(--gold)');
+      closeModal();
+      log('You fled from combat.', 'warn');
+      return;
+    } else {
+      addLine('❌ You failed to flee!', 'var(--red2)');
+    }
+  }
+
+  // Check enemy death
+  if (enemy.hp <= 0) {
+    addLine(`🎉 You defeated the ${enemy.name}!`, 'var(--gold2)');
+    player.xp   += enemy.xp;
+    player.gold += enemy.gold;
+    session.kills++;
+    session.goldFound += enemy.gold;
+    addLine(`+${enemy.xp} XP  +${enemy.gold} Gold`, 'var(--gold)');
+    checkLevelUp();
+    updateHUD();
+    // Update footer
+    document.getElementById('modal-footer').innerHTML =
+      `<button class="modal-btn success" onclick="closeModal()">✅ Continue</button>`;
+    if (combatState.isBoss) {
+      addLine('⬇️ The boss is dead! A new floor awaits.', 'var(--purple2)');
+      document.getElementById('modal-footer').innerHTML =
+        `<button class="modal-btn success" onclick="bossVictory()">⬇️ Descend</button>`;
+    }
+    return;
+  }
+
+  // Enemy attacks
+  const edamage = Math.max(1, enemy.atk - player.defense + rand(-2,3));
+  player.hp = Math.max(0, player.hp - edamage);
+  addLine(`${enemy.icon||'👾'} ${enemy.name} hits you for ${edamage} damage!`, 'var(--red2)');
+
+  // Update bars
+  document.getElementById('c-player-bar').style.width = clamp(player.hp/player.maxHp*100,0,100)+'%';
+  document.getElementById('c-player-hp').textContent  = `${player.hp} / ${player.maxHp} HP`;
+  document.getElementById('c-enemy-bar').style.width  = clamp(enemy.hp/combatState.enemyMaxHp*100,0,100)+'%';
+  document.getElementById('c-enemy-hp').textContent   = `${enemy.hp} / ${combatState.enemyMaxHp} HP`;
+
+  // Update potion button
+  const hasPotions = player.inventory.includes('Health Potion');
+  const potBtn = document.getElementById('modal-footer').children[1];
+  if (potBtn) {
+    potBtn.disabled = !hasPotions;
+    potBtn.style.opacity = hasPotions ? '1' : '0.4';
+    potBtn.className = `modal-btn ${hasPotions?'success':''}`;
+  }
+
+  updateHUD();
+
+  if (player.hp <= 0) {
+    addLine('💀 You have been slain...', 'var(--red2)');
+    document.getElementById('modal-footer').innerHTML =
+      `<button class="modal-btn danger" onclick="closeModal(); triggerDeath()">💀 Game Over</button>`;
+  }
+}
+
+function bossVictory() {
+  closeModal();
+  player.floor++;
+  player.pos = [0,0];
+  player.visitedSet = new Set(['0,0']);
+  generateFloor(player.floor);
+  dungeon['0,0'].visited = true;
+  log(`🐉 Boss defeated! Welcome to Floor ${player.floor}!`, 'system');
+  updateRoomDisplay();
+  renderMinimap();
+  updateHUD();
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+}
+
+// ═══════════════════════════════════════════════
+//  SHOP MODAL
+// ═══════════════════════════════════════════════
+let shopItems = [];
+
+function openShopModal() {
+  const allKeys = Object.keys(ITEMS);
+  shopItems = allKeys.sort(() => 0.5 - Math.random()).slice(0, 4);
+  renderShopModal();
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function renderShopModal() {
+  document.getElementById('modal-icon').textContent  = '🛒';
+  document.getElementById('modal-title').textContent = 'Wandering Merchant';
+
+  let html = `<div class="shop-gold">💰 Your gold: <strong>${player.gold}</strong></div>`;
+  shopItems.forEach((name, i) => {
+    const item = ITEMS[name];
+    const cantAfford = player.gold < item.price;
+    html += `
+      <div class="shop-item ${cantAfford?'cant-afford':''}" onclick="${cantAfford?'':  `buyItem(${i})`}">
+        <div>
+          <div class="shop-item-name">${item.icon} ${name}</div>
+          <div class="shop-item-info">${item.type} · +${item.value}</div>
+        </div>
+        <div class="shop-item-price">${item.price} 💰</div>
+      </div>`;
+  });
+  document.getElementById('modal-body').innerHTML = html;
+  document.getElementById('modal-footer').innerHTML =
+    `<button class="modal-btn" onclick="closeModal()">'Not today.' — Leave shop</button>`;
+}
+
+function buyItem(idx) {
+  const name = shopItems[idx];
+  const item = ITEMS[name];
+  if (player.gold < item.price) { log('Not enough gold!','danger'); return; }
+  player.gold -= item.price;
+
+  if (item.type === 'heal')   { player.inventory.push(name); log(`🧪 Bought ${name}!`, 'gold'); }
+  if (item.type === 'weapon') { player.atk += item.value;    log(`⚔️ Equipped ${name}! ATK +${item.value}`, 'gold'); }
+  if (item.type === 'armor')  { player.defense += item.value;log(`🛡️ Equipped ${name}! DEF +${item.value}`, 'gold'); }
+
+  updateHUD();
+  renderShopModal();  // refresh prices / gold
+}
+
+// ═══════════════════════════════════════════════
+//  POTION (from action bar)
+// ═══════════════════════════════════════════════
+function usePotion() {
+  const idx = player.inventory.indexOf('Health Potion');
+  if (idx === -1) { log('No Health Potions in inventory!', 'warn'); return; }
+  player.inventory.splice(idx, 1);
+  const heal = ITEMS['Health Potion'].value;
+  player.hp = Math.min(player.maxHp, player.hp + heal);
+  log(`🧪 You drink a Health Potion — restored ${heal} HP!`, 'success');
+  updateHUD();
+}
+
+// ═══════════════════════════════════════════════
+//  DEATH / WIN
+// ═══════════════════════════════════════════════
+function triggerDeath() {
+  closeModal();
+  const el = document.getElementById('gameover-stats');
+  el.innerHTML = makeEndStats();
+  showScreen('screen-gameover');
+  localStorage.removeItem('dungeon_save');
+}
+
+function triggerWin() {
+  const el = document.getElementById('win-stats');
+  el.innerHTML = makeEndStats();
+  showScreen('screen-win');
+  localStorage.removeItem('dungeon_save');
+}
+
+function makeEndStats() {
+  const p = player;
+  return `
+    <div class="end-stat-row"><span class="esk">Hero</span><span class="esv">${p.name}</span></div>
+    <div class="end-stat-row"><span class="esk">Level Reached</span><span class="esv">${p.level}</span></div>
+    <div class="end-stat-row"><span class="esk">Floor</span><span class="esv">${p.floor} / 5</span></div>
+    <div class="end-stat-row"><span class="esk">Gold Collected</span><span class="esv">${session.goldFound}</span></div>
+    <div class="end-stat-row"><span class="esk">Monsters Slain</span><span class="esv">${session.kills}</span></div>
+    <div class="end-stat-row"><span class="esk">Traps Triggered</span><span class="esv">${session.traps}</span></div>
+    <div class="end-stat-row"><span class="esk">Rooms Explored</span><span class="esv">${p.visitedSet.size}</span></div>
+  `;
+}
+
+// ═══════════════════════════════════════════════
+//  SAVE / LOAD
+// ═══════════════════════════════════════════════
+function saveGame() {
+  if (!player) return;
+  const data = {
+    player: {...player, visitedSet: [...player.visitedSet]},
+    dungeon,
+    exitPos,
+    session,
+  };
+  localStorage.setItem('dungeon_save', JSON.stringify(data));
+  log('💾 Game saved to browser storage.', 'system');
+}
+
+function loadGame() {
+  const raw = localStorage.getItem('dungeon_save');
+  if (!raw) { alert('No save file found!'); return; }
+  try {
+    const data = JSON.parse(raw);
+    player = data.player;
+    player.visitedSet = new Set(data.player.visitedSet);
+    dungeon  = data.dungeon;
+    exitPos  = data.exitPos;
+    session  = data.session || {kills:0, goldFound:0, traps:0};
+    log('📂 Save file loaded!', 'system');
+    enterGameScreen();
+  } catch(e) {
+    alert('Save file corrupted.');
+  }
+}
+
+function quitGame() {
+  if (confirm('Save and quit to main menu?')) {
+    saveGame();
+    showScreen('screen-menu');
+  }
+}
+
+// ═══════════════════════════════════════════════
+//  GAME START
+// ═══════════════════════════════════════════════
+function startGame() {
+  const name = document.getElementById('input-name').value.trim() || 'Hero';
+  player  = createPlayer(name);
+  session = {kills:0, goldFound:0, traps:0};
+  generateFloor(1);
+  dungeon['0,0'].visited = true;
+  player.visitedSet.add('0,0');
+  log(`⚔️ Welcome, ${name}! The dungeon awaits...`, 'system');
+  log('Navigate with the arrow buttons. Survive 5 floors to escape!', 'info');
+  enterGameScreen();
+}
+
+function enterGameScreen() {
+  updateRoomDisplay();
+  renderMinimap();
+  updateHUD();
+  showScreen('screen-game');
+}
+
+// ═══════════════════════════════════════════════
+//  LORE GENERATOR (recursive in spirit)
+// ═══════════════════════════════════════════════
+const LORE_SUBJECTS   = ["The ancient king","A forgotten mage","The dungeon itself","A cursed knight","The shadow council"];
+const LORE_VERBS      = ["cursed","sealed","hid","summoned","sacrificed","bound"];
+const LORE_OBJECTS    = ["a terrible beast","dark magic","endless traps","unimaginable treasure","an imprisoned god","the souls of the fallen"];
+const LORE_CONNECTORS = ["because","so that","after","knowing that","fearing that","upon discovering that"];
+
+function generateLoreSentence(depth) {
+  if (depth === 0) return `${pick(LORE_SUBJECTS)} ${pick(LORE_VERBS)} ${pick(LORE_OBJECTS)}.`;
+  return `${pick(LORE_SUBJECTS)} ${pick(LORE_VERBS)} ${pick(LORE_OBJECTS)} ${pick(LORE_CONNECTORS)} ${generateLoreSentence(depth-1)}`;
+}
+
+function generateLore() {
+  const container = document.getElementById('lore-text');
+  container.innerHTML = '';
+  for (let i = 0; i < 3; i++) {
+    const p = document.createElement('p');
+    p.style.marginBottom = '16px';
+    p.textContent = generateLoreSentence(2);
+    container.appendChild(p);
+  }
+}
+
+// ═══════════════════════════════════════════════
+//  KEYBOARD SUPPORT
+// ═══════════════════════════════════════════════
+document.addEventListener('keydown', e => {
+  if (!document.getElementById('screen-game').classList.contains('active')) return;
+  if (document.getElementById('modal-overlay').classList.contains('open')) return;
+  const map = {ArrowUp:'north', ArrowDown:'south', ArrowLeft:'west', ArrowRight:'east',
+               w:'north', s:'south', a:'west', d:'east'};
+  if (map[e.key]) { e.preventDefault(); move(map[e.key]); }
+});
+
+// Enter key in name input
+document.getElementById('input-name').addEventListener('keydown', e => {
+  if (e.key === 'Enter') startGame();
+});
+</script>
+</body>
+</html>
